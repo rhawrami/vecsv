@@ -21,9 +21,5 @@ func ScanForStructuralChars(b []byte, sep byte)
 //
 // Assumes length of `b` is divisible by 64.
 //
-// `t` determines how large the offsets in `o` are; if `t` == 4, then
-// offsets will be unsigned 32-bit integers; if `t` == 8, offsets will
-// be unsigned 64-bit integers.
-//
 //go:noescape
-func C_compare_mask_reduce_extract(b []byte, o []uint64, sep byte)
+func C_compare_mask_reduce_extract(b []byte, o []uint32, in_quotes int, sep byte) int
