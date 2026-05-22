@@ -1,12 +1,35 @@
-package simd
+package parser
 
 import "unsafe"
 
 const alignSize int = 64
 
-// isAligned returns true if `addr` is divisble by `a`.
-func isAligned(addr *byte, a int) bool {
-	return uintptr(unsafe.Pointer(addr))&uintptr(a-1) == 0
+// ref is a reference to a byte slice, starting at
+// `ptr`, with `len` bytes of length; mirrors the underlying
+// representation of a string type.
+type ref struct {
+	ptr *byte
+	len uint
+}
+
+// Records represent a parsed csv file.
+type records struct {
+	rec     [][]ref
+	nFields int
+}
+
+func (r *records) asStringSlices() [][]string {
+	return unsafe.Slice((*[]string)(unsafe.Pointer(&r.rec[0])), len(r.rec))
+}
+
+// incPtr increments a byte pointer by `o` bytes.
+func incPtr(b *byte, o uint) *byte {
+	return (*byte)(unsafe.Pointer(uintptr(unsafe.Pointer(b)) + uintptr(o)))
+}
+
+// decPtr decrements a byte pointer by `o` bytes.
+func decPtr(b *byte, o uint) *byte {
+	return (*byte)(unsafe.Pointer(uintptr(unsafe.Pointer(b)) - uintptr(o)))
 }
 
 // makeAlignedSlice returns a byte slice with len >= `l`.
@@ -22,39 +45,9 @@ func makeAlignedSlice(l int) []byte {
 	offBy := int(uintptr(unsafe.Pointer(&s[0])) & uintptr(alignSize-1))
 	start := 0
 	if offBy != 0 {
-		start = 64 - offBy
+		start = alignSize - offBy
 	}
 
 	s = s[start : start+l]
 	return s
-}
-
-// asU64T casts `b` as a slice of unsigned 64-bit integers, with length
-// len(b) / 8.
-func asU64T(b []byte) []uint64 {
-	if len(b) == 0 {
-		return []uint64{}
-	}
-	if !isAligned(&b[0], alignSize) {
-		panic("base not aligned to 64 bytes")
-	}
-	if len(b)&7 != 0 {
-		panic("slice length not divisible by 8")
-	}
-	return unsafe.Slice((*uint64)(unsafe.Pointer(&b[0])), len(b)>>3)
-}
-
-// asU32T casts `b` as a slice of unsigned 32-bit integers, with length
-// len(b) / 8.
-func asU32T(b []byte) []uint32 {
-	if len(b) == 0 {
-		return []uint32{}
-	}
-	if !isAligned(&b[0], alignSize) {
-		panic("base not aligned to 64 bytes")
-	}
-	if len(b)&3 != 0 {
-		panic("slice length not divisible by 4")
-	}
-	return unsafe.Slice((*uint32)(unsafe.Pointer(&b[0])), len(b)>>2)
 }
