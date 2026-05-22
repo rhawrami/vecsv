@@ -1,14 +1,8 @@
 //go:build arm64
 
-package simd
+package parser
 
-// ResCMRE defines the results returned from a call to _compare_mask_reduce_extract.
-type resCMRE struct {
-	inQuotes    int // 1 if left off in a quote pair; 0 otherwise
-	offsetsRead int // number of offsets recorded
-}
-
-// _compare_mask_reduce_extract compares bytes in `b` to the following:
+// compareMaskReduceExtract compares bytes in `b` to the following:
 // 1. newline:    `\n`
 // 2. separator:  `,|\t|;...`
 // 3. quotes:     `"`
@@ -22,7 +16,7 @@ type resCMRE struct {
 // A resCMRE result is returned, containing the quote state, and the number of offsets read, in order
 // to update/grow the offsets buffer.
 //
-// Assumes length of `b` is divisible by 64.
+// Assumes length of `b` is divisible by 64, and that len(`o`) >= len(`b`).
 //
 //go:noescape
-func _compare_mask_reduce_extract(b []byte, o []uint32, in_quotes, at int, sep byte) resCMRE
+func compareMaskReduceExtract(b []byte, o []uint, in_quotes, at int, sep byte) resCMRE

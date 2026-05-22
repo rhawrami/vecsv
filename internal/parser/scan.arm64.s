@@ -89,7 +89,7 @@
 #define AT_R R10
 
 #define QSTATE_R R4
-#define NOFFSETSREAD_R R9
+#define NOFFSETSWRITTEN_R R9
 
 #define A_V V0
 #define B_V V1
@@ -105,19 +105,19 @@
 #define SEP_V V9
 #define QUOTE_V V10
 
-// func _compare_mask_reduce_extract(b []byte, o []uint32, in_quotes, at int, sep byte) resCMRE
-TEXT ·_compare_mask_reduce_extract(SB),NOSPLIT,$0-96
+// func compareMaskReduceExtract(b []byte, o []uint, in_quotes, at int, sep byte) resCMRE
+TEXT ·compareMaskReduceExtract(SB),NOSPLIT,$0-88
     MOVD b+0(FP), BASE_R
     MOVD o+24(FP), OFF_R  
     MOVD N+8(FP), LEN_R  
     MOVD in_quotes+48(FP), QSTATE_R
     MOVD at+56(FP), AT_R
-    EOR NOFFSETSREAD_R, NOFFSETSREAD_R
+    EOR NOFFSETSWRITTEN_R, NOFFSETSWRITTEN_R
     EOR CTR_R, CTR_R
 
     MOVD LF_CHAR, R5                          
     VDUP R5, LF_V.B16
-    MOVD SEP_CHAR+56(FP), R5                         
+    MOVD sep+64(FP), R5                         
     VDUP R5, SEP_V.B16
     MOVD QUOTE_CHAR, R5                              
     VDUP R5, QUOTE_V.B16
@@ -144,7 +144,7 @@ cmp_mask_loop:
     BIC R6, R5, R5
 
     POP_COUNT(R5, R8)
-    ADD R8, NOFFSETSREAD_R
+    ADD R8, NOFFSETSWRITTEN_R
     CMP $0, R8
     BEQ eval
 
@@ -153,7 +153,7 @@ cmp_mask_loop:
 extract_loop:
     CLZ R5, R7
     ADD AT_R, R7, R11
-    MOVW.P R11, 4(R1)
+    MOVD.P R11, 8(R1)
 
     LSR R7, R6, R7
     AND R7, R5, R5
@@ -169,6 +169,6 @@ eval:
     BLT cmp_mask_loop
 
 exit_fn:
-    MOVD QSTATE_R, quote_state_out+64(FP)
-    MOVD NOFFSETSREAD_R, n_offsets_read_out+72(FP)
+    MOVD QSTATE_R, quote_state_out+72(FP)
+    MOVD NOFFSETSWRITTEN_R, n_offsets_read_out+80(FP)
     RET
