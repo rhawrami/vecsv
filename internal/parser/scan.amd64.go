@@ -5,7 +5,7 @@ package parser
 import "golang.org/x/sys/cpu"
 
 var (
-	compareMaskReduceExtract func(b []byte, o []uint, in_quotes, at int, sep byte) resCMRE
+	compareMaskReduceExtract func(b []byte, o []int, in_quotes, at int, sep byte) resCMRE
 )
 
 func init() {
@@ -18,7 +18,7 @@ func init() {
 }
 
 //go:noescape
-func cmreAVX2(b []byte, o []uint, in_quotes, at int, sep byte) resCMRE
+func cmreAVX2(b []byte, o []int, in_quotes, at int, sep byte) resCMRE
 
 //go:noescape
-func cmreSSE2(b []byte, o []uint, in_quotes, at int, sep byte) resCMRE
+func cmreSSE2(b []byte, o []int, in_quotes, at int, sep byte) resCMRE

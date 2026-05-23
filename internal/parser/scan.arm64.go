@@ -19,4 +19,4 @@ package parser
 // Assumes length of `b` is divisible by 64, and that len(`o`) >= len(`b`).
 //
 //go:noescape
-func compareMaskReduceExtract(b []byte, o []uint, in_quotes, at int, sep byte) resCMRE
+func compareMaskReduceExtract(b []byte, o []int, in_quotes, at int, sep byte) resCMRE
