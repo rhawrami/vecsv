@@ -1,8 +1,8 @@
 package parser
 
 const (
-	MINBUFFERSIZE    int  = 128
 	CHUNKSIZEDEFAULT int  = 4096
+	TAILSIZE         int  = 128
 	NEWLINECHAR      byte = '\n'
 	SEPDEFAULT       byte = ','
 	FIELDNDEFAULT    int  = 10
@@ -16,8 +16,9 @@ type resCMRE struct {
 
 // NewParser returns a new Parser.
 func NewParser() *Parser {
+	tail := makeAlignedSlice(TAILSIZE)
 	o := make([]uint, CHUNKSIZEDEFAULT)
-	return &Parser{Sep: SEPDEFAULT, o: o}
+	return &Parser{Sep: SEPDEFAULT, tail: tail, o: o}
 }
 
 // Parser parses a csv file. A Parser makes the following assumptions:
@@ -26,16 +27,26 @@ func NewParser() *Parser {
 //
 // 2. Unpaired or escaped quotes (e.g., `,fie"ld,` or `,fie\"ld",`) are not allowed.
 type Parser struct {
-	b   []byte   // csv data buffer
-	o   []uint   // offsets
-	wip *records // records
-	at  uint     // on byte
-	Sep byte     // seperator character
+	b    []byte   // csv data buffer
+	tail []byte   // copied remainder bytes (if len(b) not divisibly by 128)
+	o    []uint   // offsets
+	wip  *records // records
+	at   uint     // on byte
+	Sep  byte     // seperator character
 }
 
-func (p *Parser) readFirstRow() int {
-	// assume that p.b is at least 128 bytes.
-	const chunkSize int = 128
+// clearTail sets all tail bytes to 0.
+func (p *Parser) clearTail() {
+	// cast to 32|64 bit integer type to speed up clearing.
+	t := asUintT(p.tail)
+
+	for i := 0; i < len(t); i++ {
+		t[i] = 0
+	}
+}
+
+func (p *Parser) readFirstRow() (int, bool) {
+	var chunkSize int = 128
 
 	wip := newRecords()
 
@@ -45,10 +56,19 @@ func (p *Parser) readFirstRow() int {
 		ptrAt   uint // buffer offset for string references
 		foundNL bool
 	)
-	// TODO: handle buffer remainder
-	for !foundNL && at < (len(p.b)+chunkSize) {
+
+	for !foundNL && at < len(p.b) {
+		// handle final 128 bytes
+		var buff []byte
+		if diff := len(p.b) - int(at); diff < chunkSize {
+			buff = p.b[at : at+chunkSize]
+		} else {
+			buff = p.tail
+			chunkSize = diff
+		}
+
 		r := compareMaskReduceExtract(
-			p.b[at:at+chunkSize],
+			buff,
 			p.o,
 			inQ,
 			at,
@@ -75,7 +95,10 @@ func (p *Parser) readFirstRow() int {
 		at += chunkSize
 	}
 
-	return inQ
+	p.wip = wip
+	p.at = uint(at)
+
+	return inQ, true
 }
 
 // ParseBytes parses a set of bytes representing a csv file.
