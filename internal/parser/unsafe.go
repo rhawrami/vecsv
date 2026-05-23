@@ -4,23 +4,11 @@ import "unsafe"
 
 const alignSize int = 64
 
-// ref is a reference to a byte slice, starting at
-// `ptr`, with `len` bytes of length; mirrors the underlying
-// representation of a string type.
-type ref struct {
-	ptr *byte
-	len uint
+func asIntT(b []byte) []int {
+	return unsafe.Slice((*int)(unsafe.Pointer(&b[0])), len(b)/int(unsafe.Sizeof(int(1))))
 }
 
-// Records represent a parsed csv file.
-type records struct {
-	rec     [][]ref
-	nFields int
-}
-
-func (r *records) asStringSlices() [][]string {
-	return unsafe.Slice((*[]string)(unsafe.Pointer(&r.rec[0])), len(r.rec))
-}
+func bPtrToUnsafe(b *byte) unsafe.Pointer { return unsafe.Pointer(b) }
 
 // incPtr increments a byte pointer by `o` bytes.
 func incPtr(b *byte, o uint) *byte {
