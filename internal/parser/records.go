@@ -3,7 +3,7 @@ package parser
 import "unsafe"
 
 // newStrRef returns a string reference.
-func newStrRef(ptr *byte, len uint) strRef {
+func newStrRef(ptr *byte, len int) strRef {
 	return strRef{ptr: bPtrToUnsafe(ptr), len: len}
 }
 
@@ -12,7 +12,7 @@ func newStrRef(ptr *byte, len uint) strRef {
 // representation of a string type.
 type strRef struct {
 	ptr unsafe.Pointer
-	len uint
+	len int
 }
 
 // sliceHeader represents a slice.
