@@ -4,21 +4,17 @@ package parser
 
 import "golang.org/x/sys/cpu"
 
-var (
-	compareMaskReduceExtract func(b []byte, o []int, in_quotes, at int, sep byte) resCMRE
-)
-
 func init() {
 	if cpu.X86.HasAVX2 {
-		compareMaskReduceExtract = cmreAVX2
+		compareMaskReduce128 = cmr128AVX2
 	} else {
 		// SSE2 is always available on amd64
-		compareMaskReduceExtract = cmreSSE2
+		compareMaskReduce128 = cmr128SSE2
 	}
 }
 
 //go:noescape
-func cmreAVX2(b []byte, o []int, in_quotes, at int, sep byte) resCMRE
+func cmr128AVX2(base *byte, in_quotes int, sep byte) cmr128Result
 
 //go:noescape
-func cmreSSE2(b []byte, o []int, in_quotes, at int, sep byte) resCMRE
+func cmr128SSE2(base *byte, in_quotes int, sep byte) cmr128Result
